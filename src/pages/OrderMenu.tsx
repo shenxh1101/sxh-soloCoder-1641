@@ -232,8 +232,8 @@ export default function OrderMenu() {
     <div className="flex flex-col h-full bg-stone-50">
       <Header
         title="点餐端菜单"
-        description="顾客点餐界面，展示所有在售菜品"
-        rightElement={
+        subtitle="顾客点餐界面，展示所有在售菜品"
+        action={
           <div className="flex items-center gap-2">
             <Badge variant="orange" className="text-sm px-3 py-1">
               今日营业中
@@ -281,7 +281,12 @@ export default function OrderMenu() {
           <div className="p-4 pb-24">
             {filteredDishes.length === 0 ? (
               <Empty
-                message={searchKeyword ? '未找到匹配的菜品' : '该分类暂无在售菜品'}
+                title={searchKeyword ? '未找到匹配的菜品' : '该分类暂无在售菜品'}
+                description={
+                  searchKeyword
+                    ? '请尝试其他关键词或切换分类'
+                    : '当前分类下没有上架的菜品，请在菜品管理中添加'
+                }
               />
             ) : groupedDishes ? (
               <div className="space-y-8">
@@ -381,7 +386,7 @@ export default function OrderMenu() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {cart.size === 0 ? (
-                <Empty message="购物车是空的" />
+                <Empty title="购物车是空的" description="快去添加喜欢的菜品吧" />
               ) : (
                 Array.from(cart.values()).map(({ dish, quantity }) => (
                   <div
