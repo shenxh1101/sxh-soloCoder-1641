@@ -9,10 +9,13 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  Package,
+  X,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
+import { Modal } from '@/components/common/Modal';
 import { useAppStore } from '@/store/useAppStore';
 import { Dish, Ingredient, DishIngredient, CATEGORY_LABELS } from '@/types';
 import { formatPrice, getProfitRateLevel } from '@/utils/format';
@@ -28,11 +31,20 @@ export default function CostCards() {
     addDishIngredient,
     updateDishIngredient,
     deleteDishIngredient,
+    addIngredient,
   } = useAppStore();
 
   const [expandedDishes, setExpandedDishes] = useState<Set<string>>(new Set());
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const [showNewIngredientModal, setShowNewIngredientModal] = useState(false);
+  const [newIngredientForm, setNewIngredientForm] = useState({
+    name: '',
+    unit: '克',
+    unitPrice: 0,
+  });
+  const [pendingDishId, setPendingDishId] = useState<string | null>(null);
 
   const toggleExpand = (dishId: string) => {
     const newExpanded = new Set(expandedDishes);
@@ -58,6 +70,10 @@ export default function CostCards() {
         ingredientId: ingredients[0].id,
         quantity: 1,
       });
+    } else {
+      setPendingDishId(dishId);
+      setNewIngredientForm({ name: '', unit: '克', unitPrice: 0 });
+      setShowNewIngredientModal(true);
     }
   };
 
@@ -67,6 +83,35 @@ export default function CostCards() {
 
   const handleUpdateIngredient = (id: string, ingredientId: string) => {
     updateDishIngredient(id, { ingredientId });
+  };
+
+  const openNewIngredientModal = (dishId: string) => {
+    setPendingDishId(dishId);
+    setNewIngredientForm({ name: '', unit: '克', unitPrice: 0 });
+    setShowNewIngredientModal(true);
+  };
+
+  const handleCreateIngredient = () => {
+    if (!newIngredientForm.name.trim()) return;
+    if (newIngredientForm.unitPrice <= 0) return;
+
+    const newIng = addIngredient({
+      name: newIngredientForm.name.trim(),
+      unit: newIngredientForm.unit.trim() || '个',
+      unitPrice: newIngredientForm.unitPrice,
+    });
+
+    if (pendingDishId) {
+      addDishIngredient({
+        dishId: pendingDishId,
+        ingredientId: newIng.id,
+        quantity: 1,
+      });
+    }
+
+    setShowNewIngredientModal(false);
+    setPendingDishId(null);
+    setNewIngredientForm({ name: '', unit: '克', unitPrice: 0 });
   };
 
   const ProfitBadge = ({ rate }: { rate: number }) => {
@@ -246,17 +291,30 @@ export default function CostCards() {
                             <Calculator className="w-4 h-4 text-orange-500" />
                             成本明细
                           </h5>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            icon={<Plus className="w-4 h-4" />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddIngredient(dish.id);
-                            }}
-                          >
-                            添加原材料
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              icon={<Package className="w-4 h-4" />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openNewIngredientModal(dish.id);
+                              }}
+                            >
+                              新建原材料
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              icon={<Plus className="w-4 h-4" />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddIngredient(dish.id);
+                              }}
+                            >
+                              添加原材料
+                            </Button>
+                          </div>
                         </div>
 
                         <table className="w-full">
@@ -344,9 +402,43 @@ export default function CostCards() {
                               <tr>
                                 <td
                                   colSpan={6}
-                                  className="px-4 py-8 text-center text-stone-400"
+                                  className="px-4 py-10 text-center"
                                 >
-                                  暂无原材料，点击上方按钮添加
+                                  <div className="flex flex-col items-center gap-3 text-stone-400">
+                                    <Package className="w-10 h-10 opacity-40" />
+                                    <div>
+                                      <p className="font-medium mb-1">暂无原材料</p>
+                                      <p className="text-sm">
+                                        点击上方"新建原材料"创建，或点击"添加原材料"选择已有
+                                      </p>
+                                    </div>
+                                    <div className="flex gap-2 mt-1">
+                                      <Button
+                                        size="sm"
+                                        variant="primary"
+                                        icon={<Package className="w-4 h-4" />}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openNewIngredientModal(dish.id);
+                                        }}
+                                      >
+                                        新建原材料
+                                      </Button>
+                                      {ingredients.length > 0 && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          icon={<Plus className="w-4 h-4" />}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAddIngredient(dish.id);
+                                          }}
+                                        >
+                                          添加已有
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
                                 </td>
                               </tr>
                             )}
@@ -384,6 +476,109 @@ export default function CostCards() {
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={showNewIngredientModal}
+        onClose={() => setShowNewIngredientModal(false)}
+        title="新建原材料"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowNewIngredientModal(false)}>
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateIngredient}
+              disabled={!newIngredientForm.name.trim() || newIngredientForm.unitPrice <= 0}
+            >
+              创建并添加
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 py-2">
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">
+              原材料名称 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newIngredientForm.name}
+              onChange={(e) =>
+                setNewIngredientForm((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="例如：鸡胸肉、大葱、生抽..."
+              className="w-full px-4 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-colors"
+              autoFocus
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                计量单位 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newIngredientForm.unit}
+                onChange={(e) =>
+                  setNewIngredientForm((prev) => ({ ...prev, unit: e.target.value }))
+                }
+                placeholder="克/个/毫升/勺..."
+                className="w-full px-4 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-colors"
+              />
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {['克', '千克', '毫升', '升', '个', '只', '片', '勺', '斤'].map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() =>
+                      setNewIngredientForm((prev) => ({ ...prev, unit: u }))
+                    }
+                    className={cn(
+                      'px-2.5 py-1 text-xs rounded-md transition-colors border',
+                      newIngredientForm.unit === u
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-white text-stone-600 border-stone-200 hover:border-orange-300'
+                    )}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                单价（元）<span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={newIngredientForm.unitPrice || ''}
+                onChange={(e) =>
+                  setNewIngredientForm((prev) => ({
+                    ...prev,
+                    unitPrice: parseFloat(e.target.value) || 0,
+                  }))
+                }
+                placeholder="每单位价格"
+                className="w-full px-4 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-colors"
+              />
+              <p className="mt-2 text-xs text-stone-400">
+                按上述单位对应的价格，例如：1克鸡胸肉 0.03 元
+              </p>
+            </div>
+          </div>
+
+          {pendingDishId && (
+            <div className="p-3 bg-orange-50 rounded-lg border border-orange-100">
+              <p className="text-sm text-orange-700">
+                创建后将自动添加到当前菜品的成本卡中
+              </p>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

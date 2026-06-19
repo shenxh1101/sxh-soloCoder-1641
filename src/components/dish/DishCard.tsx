@@ -6,6 +6,8 @@ import {
   AlertTriangle,
   Pin,
   PinOff,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Dish, CATEGORY_LABELS, CATEGORY_COLORS } from '@/types';
 import { Badge } from '@/components/common/Badge';
@@ -22,7 +24,7 @@ interface DishCardProps {
 }
 
 export function DishCard({ dish, onEdit, onDelete, onToggleSoldOut }: DishCardProps) {
-  const { setDishTop } = useAppStore();
+  const { setDishTop, toggleOnSale } = useAppStore();
 
   const getStatusBadge = () => {
     if (dish.isSoldOut) {
@@ -54,10 +56,14 @@ export function DishCard({ dish, onEdit, onDelete, onToggleSoldOut }: DishCardPr
       className={cn(
         'bg-white rounded-xl border border-stone-200 overflow-hidden group',
         'transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-        dish.isSoldOut && 'opacity-75'
+        dish.isSoldOut && 'opacity-75',
+        !dish.isOnSale && 'border-dashed'
       )}
     >
-      <div className="relative aspect-square overflow-hidden bg-stone-100">
+      <div className={cn(
+        'relative aspect-square overflow-hidden bg-stone-100',
+        !dish.isOnSale && 'grayscale'
+      )}>
         <img
           src={dish.image}
           alt={dish.name}
@@ -83,6 +89,13 @@ export function DishCard({ dish, onEdit, onDelete, onToggleSoldOut }: DishCardPr
             </div>
           </div>
         )}
+        {!dish.isOnSale && !dish.isSoldOut && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div className="bg-stone-700 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg">
+              已下架
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-4">
@@ -104,40 +117,67 @@ export function DishCard({ dish, onEdit, onDelete, onToggleSoldOut }: DishCardPr
           <span className="text-2xl font-bold text-orange-600">{formatPrice(dish.price)}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant={dish.isSoldOut ? 'success' : 'danger'}
-            size="sm"
-            className="flex-1"
-            onClick={() => onToggleSoldOut(dish)}
-          >
-            {dish.isSoldOut ? '恢复售卖' : '沽清'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="p-2"
-            onClick={() => setDishTop(dish.id, !dish.isTop)}
-            title={dish.isTop ? '取消置顶' : '置顶推荐'}
-          >
-            {dish.isTop ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="p-2"
-            onClick={() => onEdit(dish)}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="p-2 text-red-500 hover:text-red-600"
-            onClick={() => onDelete(dish)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={dish.isOnSale ? 'secondary' : 'success'}
+              size="sm"
+              className="flex-1"
+              icon={dish.isOnSale ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              onClick={() => toggleOnSale(dish.id)}
+            >
+              {dish.isOnSale ? '下架' : '上架'}
+            </Button>
+            <Button
+              variant={dish.isSoldOut ? 'success' : 'danger'}
+              size="sm"
+              className="flex-1"
+              onClick={() => onToggleSoldOut(dish)}
+              disabled={!dish.isOnSale && !dish.isSoldOut}
+            >
+              {dish.isSoldOut ? '恢复售卖' : '沽清'}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 p-2"
+              onClick={() => setDishTop(dish.id, !dish.isTop)}
+              title={dish.isTop ? '取消置顶' : '置顶推荐'}
+            >
+              {dish.isTop ? (
+                <span className="flex items-center gap-1 text-orange-600">
+                  <PinOff className="w-4 h-4" />
+                  取消置顶
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <Pin className="w-4 h-4" />
+                  置顶
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 p-2"
+              onClick={() => onEdit(dish)}
+            >
+              <span className="flex items-center gap-1">
+                <Edit className="w-4 h-4" />
+                编辑
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="p-2 text-red-500 hover:text-red-600"
+              onClick={() => onDelete(dish)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

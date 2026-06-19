@@ -33,7 +33,7 @@ interface AppState {
   filterStatus: 'all' | 'on_sale' | 'off_sale' | 'sold_out';
   searchKeyword: string;
 
-  addDish: (dish: Omit<Dish, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addDish: (dish: Omit<Dish, 'id' | 'createdAt' | 'updatedAt'>) => Dish;
   updateDish: (id: string, dish: Partial<Dish>) => void;
   deleteDish: (id: string) => void;
   toggleOnSale: (id: string) => void;
@@ -43,7 +43,7 @@ interface AppState {
 
   addSaleOutRecord: (record: Omit<SaleOutRecord, 'id' | 'createdAt'>) => void;
 
-  addIngredient: (ingredient: Omit<Ingredient, 'id'>) => void;
+  addIngredient: (ingredient: Omit<Ingredient, 'id'>) => Ingredient;
   updateIngredient: (id: string, ingredient: Partial<Ingredient>) => void;
   deleteIngredient: (id: string) => void;
 
@@ -51,9 +51,10 @@ interface AppState {
   updateDishIngredient: (id: string, item: Partial<DishIngredient>) => void;
   deleteDishIngredient: (id: string) => void;
 
-  addTimedSchedule: (schedule: Omit<TimedSchedule, 'id'>) => void;
+  addTimedSchedule: (schedule: Omit<TimedSchedule, 'id'>) => TimedSchedule;
   updateTimedSchedule: (id: string, schedule: Partial<TimedSchedule>) => void;
   deleteTimedSchedule: (id: string) => void;
+  deleteTimedSchedulesByDishId: (dishId: string) => void;
   checkTimedSchedules: () => void;
 
   setFilterCategory: (category: DishCategory | 'all') => void;
@@ -94,6 +95,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           dishes: [...state.dishes, newDish],
         }));
+        return newDish;
       },
 
       updateDish: (id, dish) => {
@@ -174,6 +176,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           ingredients: [...state.ingredients, newIngredient],
         }));
+        return newIngredient;
       },
 
       updateIngredient: (id, ingredient) => {
@@ -223,6 +226,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           timedSchedules: [...state.timedSchedules, newSchedule],
         }));
+        return newSchedule;
       },
 
       updateTimedSchedule: (id, schedule) => {
@@ -236,6 +240,12 @@ export const useAppStore = create<AppState>()(
       deleteTimedSchedule: (id) => {
         set((state) => ({
           timedSchedules: state.timedSchedules.filter((ts) => ts.id !== id),
+        }));
+      },
+
+      deleteTimedSchedulesByDishId: (dishId) => {
+        set((state) => ({
+          timedSchedules: state.timedSchedules.filter((ts) => ts.dishId !== dishId),
         }));
       },
 

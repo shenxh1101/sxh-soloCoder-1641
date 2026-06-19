@@ -8,7 +8,7 @@ import { Drawer } from '@/components/common/Drawer';
 import { Modal } from '@/components/common/Modal';
 import Empty from '@/components/Empty';
 import { useAppStore } from '@/store/useAppStore';
-import { Dish, DishCategory, CATEGORY_LABELS } from '@/types';
+import { Dish, DishCategory, CATEGORY_LABELS, TimedSchedule } from '@/types';
 import { cn } from '@/lib/utils';
 
 const categories: (DishCategory | 'all')[] = ['all', 'hot', 'cold', 'staple', 'drink'];
@@ -33,6 +33,9 @@ export default function DishList() {
     updateDish,
     deleteDish,
     toggleSoldOut,
+    addTimedSchedule,
+    updateTimedSchedule,
+    deleteTimedSchedulesByDishId,
   } = useAppStore();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -80,11 +83,21 @@ export default function DishList() {
     }
   };
 
-  const handleSubmit = (data: Omit<Dish, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSubmit = (
+    data: Omit<Dish, 'id' | 'createdAt' | 'updatedAt'>,
+    schedules: TimedSchedule[]
+  ) => {
     if (editingDish) {
       updateDish(editingDish.id, data);
+      deleteTimedSchedulesByDishId(editingDish.id);
+      schedules.forEach((s) => {
+        addTimedSchedule({ ...s, dishId: editingDish.id });
+      });
     } else {
-      addDish(data);
+      const newDish = addDish(data);
+      schedules.forEach((s) => {
+        addTimedSchedule({ ...s, dishId: newDish.id });
+      });
     }
     setIsDrawerOpen(false);
     setEditingDish(null);

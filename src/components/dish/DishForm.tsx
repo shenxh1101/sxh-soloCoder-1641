@@ -8,7 +8,10 @@ import { cn } from '@/lib/utils';
 
 interface DishFormProps {
   dish?: Dish | null;
-  onSubmit: (data: Omit<Dish, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSubmit: (
+    data: Omit<Dish, 'id' | 'createdAt' | 'updatedAt'>,
+    schedules: TimedSchedule[]
+  ) => void;
   onCancel: () => void;
 }
 
@@ -30,8 +33,7 @@ const weekDays = [
 ];
 
 export function DishForm({ dish, onSubmit, onCancel }: DishFormProps) {
-  const { timedSchedules, addTimedSchedule, updateTimedSchedule, deleteTimedSchedule } =
-    useAppStore();
+  const { timedSchedules } = useAppStore();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -82,17 +84,7 @@ export function DishForm({ dish, onSubmit, onCancel }: DishFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-
-    if (dish) {
-      schedules.forEach((schedule) => {
-        if (timedSchedules.find((s) => s.id === schedule.id)) {
-          updateTimedSchedule(schedule.id, schedule);
-        } else {
-          addTimedSchedule(schedule);
-        }
-      });
-    }
+    onSubmit(formData, schedules);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,9 +118,6 @@ export function DishForm({ dish, onSubmit, onCancel }: DishFormProps) {
 
   const removeSchedule = (id: string) => {
     setSchedules((prev) => prev.filter((s) => s.id !== id));
-    if (dish && timedSchedules.find((s) => s.id === id)) {
-      deleteTimedSchedule(id);
-    }
   };
 
   const toggleDay = (scheduleId: string, day: number) => {

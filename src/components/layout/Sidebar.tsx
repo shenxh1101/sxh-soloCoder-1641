@@ -5,6 +5,8 @@ import {
   Calculator,
   ArrowUpDown,
   ChefHat,
+  ClipboardList,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +32,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -47,6 +49,30 @@ export function Sidebar() {
             <span>{item.label}</span>
           </NavLink>
         ))}
+
+        <div className="my-4 border-t border-stone-100" />
+
+        <NavLink
+          to="/order"
+          className={({ isActive }) =>
+            cn(
+              'flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200',
+              'bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100',
+              'text-orange-700 hover:from-orange-100 hover:to-amber-100 font-medium group',
+              isActive && 'shadow-md shadow-orange-100'
+            )
+          }
+        >
+          <div className="flex items-center gap-3">
+            <ClipboardList className="w-5 h-5" />
+            <span>点餐端菜单</span>
+          </div>
+          <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+        </NavLink>
+
+        <p className="px-4 mt-2 text-xs text-stone-400">
+          顾客点餐视图，展示在售菜品
+        </p>
       </nav>
 
       <div className="p-4 border-t border-stone-200">
